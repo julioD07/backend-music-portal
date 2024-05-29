@@ -16,19 +16,28 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String   
+  password  String
   fullName  String?
   isActive  Boolean  @default(true)
-  roles     Roles[]
+  roles     UserRole[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Roles {
+model Role {
   id        String   @id @default(uuid())
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  users     UserRole[]
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
 }

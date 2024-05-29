@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuthUserDto, CreateUserDto } from '../dto';
 import { JwtService } from '@nestjs/jwt';
 import { RolesService } from './roles.service';
+import { EncriptarPassAdapter } from '../adapters/encriptar-pass.adapter';
 
 @Injectable()
 export class AuthService extends PrismaClient implements OnModuleInit {
@@ -17,6 +19,9 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     //? Inyectamos el servicio de roles
     private readonly rolesService: RolesService,
+
+    //? Inyectamos el servicio de Hash
+    private readonly encriptarPassAdapter: EncriptarPassAdapter,
   ) {
     super();
   }
@@ -83,32 +88,41 @@ export class AuthService extends PrismaClient implements OnModuleInit {
    * @returns
    */
   async createUser(data: CreateUserDto) {
-    //? Obtener roles por nombre
-    const roles = await this.role.findMany({
-      where: {
-        name: { in: data.roles },
-      },
-    });
-
-    //? Verificar si todos los roles fueron encontrados
-    if (roles.length !== data.roles.length) {
-      throw new BadRequestException('Some roles not found');
-    }
-
-    //? Crear el usuario y asociar los roles
-    return await this.user.create({
-      data: {
-        email: data.email,
-        fullName: data.fullName,
-        password: data.password,
-        roles: {
-          create: roles.map((role) => ({
-            roleId: role.id,
-          })),
+    try {
+      //? Obtener roles por nombre
+      const roles = await this.role.findMany({
+        where: {
+          name: { in: data.roles },
         },
-      },
-      include: { roles: true },
-    });
+      });
+
+      //? Verificar si todos los roles fueron encontrados
+      if (roles.length !== data.roles.length) {
+        throw new BadRequestException('Some roles not found');
+      }
+
+      const hash = this.encriptarPassAdapter.hashSync(data.password);
+
+      //? Crear el usuario y asociar los roles
+      const newUser = await this.user.create({
+        data: {
+          email: data.email,
+          fullName: data.fullName,
+          password: hash,
+          roles: {
+            create: roles.map((role) => ({
+              roleId: role.id,
+            })),
+          },
+        },
+        include: { roles: true },
+      });
+
+      delete newUser.password;
+      return newUser;
+    } catch (error) {
+      this.handleErrorsException(error);
+    }
   }
 
   /**
@@ -154,12 +168,12 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     //? Obtener los ids de los roles del usuario
     const roles = user.roles.map((role) => role.roleId);
-    console.log(roles);
+    // console.log(roles);
 
     //? Obtener los nombres de los roles del usuario
     const rolesUser = await this.rolesService.getRolesByIds(roles);
 
-    console.log(rolesUser);
+    // console.log(rolesUser);
 
     //? Generar un token JWT para el usuario
     const token = this.jwtService.sign({
@@ -188,7 +202,8 @@ export class AuthService extends PrismaClient implements OnModuleInit {
    */
   async comparePassword(password: string, hash: string) {
     //? Comparar la contraseña proporcionada con el hash almacenado
-    return password === hash;
+    return this.encriptarPassAdapter.compareSync(password, hash);
+    // return password === hash;
   }
 
   // Método para encontrar un usuario por id
@@ -212,5 +227,15 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         id,
       },
     });
+  }
+
+  private handleErrorsException(error: any) {
+    if (error.code === 'P2002') {
+      throw new BadRequestException('Email already exists');
+    }
+
+    console.log(error.code);
+    console.log(error.message);
+    throw new InternalServerErrorException(error.message);
   }
 }

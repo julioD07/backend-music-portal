@@ -92,12 +92,12 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       //? Obtener roles por nombre
       const roles = await this.role.findMany({
         where: {
-          name: { in: data.roles },
+          name: { in: ["user"] },
         },
       });
 
       //? Verificar si todos los roles fueron encontrados
-      if (roles.length !== data.roles.length) {
+      if (roles.length !== ["user"].length) {
         throw new BadRequestException('Some roles not found');
       }
 
@@ -119,7 +119,11 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       });
 
       delete newUser.password;
-      return newUser;
+      return {
+        ok: true,
+        user: newUser,
+        message: 'Usuario creado correctamente',
+      };
     } catch (error) {
       this.handleErrorsException(error);
     }
@@ -231,7 +235,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   private handleErrorsException(error: any) {
     if (error.code === 'P2002') {
-      throw new BadRequestException('Email already exists');
+      throw new BadRequestException('El email ya está registrado');
     }
 
     console.log(error.code);

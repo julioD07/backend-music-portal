@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 
 export class CreateUserDto {
@@ -18,7 +18,7 @@ export class CreateUserDto {
     @IsOptional()
     isActive: boolean = true;
 
-    @IsNotEmpty({ message: 'Los roles son requeridos' })
-    @IsArray({ message: 'Los roles deben ser un arreglo' })
-    roles: string[];
+    // @IsNotEmpty({ message: 'Los roles son requeridos' })
+    // @IsArray({ message: 'Los roles deben ser un arreglo' })
+    // roles: string[];
 }

@@ -151,12 +151,12 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     //? Si no se encuentra el usuario, lanzar una excepción
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException('El usuario no existe');
     }
 
     //? Si el usuario no está activo, lanzar una excepción
     if (!user.isActive) {
-      throw new BadRequestException('User is not active');
+      throw new BadRequestException('El usuario no está activo');
     }
 
     //? Comparar la contraseña proporcionada con la almacenada
@@ -167,7 +167,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     //? Si la contraseña no es válida, lanzar una excepción
     if (!validPassword) {
-      throw new BadRequestException('Invalid password');
+      throw new BadRequestException('Contraseña incorrecta');
     }
 
     //? Obtener los ids de los roles del usuario

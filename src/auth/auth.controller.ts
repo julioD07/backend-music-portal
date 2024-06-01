@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AuthService, RolesService } from './services';
-import { AuthUserDto, CreateUserDto } from './dto';
+import { AuthUserDto, CreateUserDto, CreateUserWithRolesDto } from './dto';
 import { Auth } from './decorators';
 import { ValidRoles } from './interfaces';
 
@@ -15,6 +15,11 @@ export class AuthController {
   @Post('register/user')
   createUser(@Body() createUserDto: CreateUserDto) {
     return this.authService.createUser(createUserDto);
+  }
+
+  @Post('register/user/role')
+  createUserWithRoles(@Body() createUserWithRolesDto: CreateUserWithRolesDto) {
+    return this.authService.createUserWithRoles(createUserWithRolesDto);
   }
 
   @Post('register/Role')

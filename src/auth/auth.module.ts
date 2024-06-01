@@ -19,5 +19,6 @@ import { EncriptarPassAdapter } from './adapters/encriptar-pass.adapter';
       signOptions: { expiresIn: '1d' },
     }),
   ],
+  exports: [PassportModule, RolesService, AuthService,],
 })
 export class AuthModule {}

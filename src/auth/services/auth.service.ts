@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { AuthUserDto, CreateUserDto } from '../dto';
+import { AuthUserDto, CreateUserDto, CreateUserWithRolesDto } from '../dto';
 import { JwtService } from '@nestjs/jwt';
 import { RolesService } from './roles.service';
 import { EncriptarPassAdapter } from '../adapters/encriptar-pass.adapter';
@@ -88,45 +88,17 @@ export class AuthService extends PrismaClient implements OnModuleInit {
    * @returns
    */
   async createUser(data: CreateUserDto) {
-    try {
-      //? Obtener roles por nombre
-      const roles = await this.role.findMany({
-        where: {
-          name: { in: ["user"] },
-        },
-      });
+    return await this.createUserAll(data, null);
+  }
 
-      //? Verificar si todos los roles fueron encontrados
-      if (roles.length !== ["user"].length) {
-        throw new BadRequestException('Some roles not found');
-      }
-
-      const hash = this.encriptarPassAdapter.hashSync(data.password);
-
-      //? Crear el usuario y asociar los roles
-      const newUser = await this.user.create({
-        data: {
-          email: data.email,
-          fullName: data.fullName,
-          password: hash,
-          roles: {
-            create: roles.map((role) => ({
-              roleId: role.id,
-            })),
-          },
-        },
-        include: { roles: true },
-      });
-
-      delete newUser.password;
-      return {
-        ok: true,
-        user: newUser,
-        message: 'Usuario creado correctamente',
-      };
-    } catch (error) {
-      this.handleErrorsException(error);
-    }
+  /**
+   * Método para crear un usuario con roles
+   * @param data
+   * @returns
+   */
+  async createUserWithRoles(data: CreateUserWithRolesDto) {
+    const { roles, ...rest } = data;
+    return await this.createUserAll(rest, roles);
   }
 
   /**
@@ -231,6 +203,73 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         id,
       },
     });
+  }
+
+  //? Método para encontrar un usuario por email
+  async findUserByEmail(email: string) {
+    //? Obtenemos el usuario por email
+    return this.user.findUnique({
+      select: {
+        //? Seleccionamos los campos que queremos obtener
+        id: true,
+        email: true,
+        fullName: true,
+        isActive: true,
+        roles: {
+          select: {
+            roleId: true,
+          },
+        },
+      },
+      //? Filtramos por el email
+      where: {
+        email,
+      },
+    });
+  }
+
+  private async createUserAll(data: CreateUserDto, rolesEnviated: string[]) {
+    try {
+      const roleTemp = !rolesEnviated ? ['user'] : rolesEnviated;
+
+      //? Obtener roles por nombre
+      const roles = await this.role.findMany({
+        where: {
+          name: { in: roleTemp },
+        },
+      });
+
+      //? Verificar si todos los roles fueron encontrados
+      if (roles.length !== roleTemp.length) {
+        throw new BadRequestException('Uno o más roles no existen');
+      }
+
+      const hash = this.encriptarPassAdapter.hashSync(data.password);
+
+      //? Crear el usuario y asociar los roles
+      const newUser = await this.user.create({
+        data: {
+          email: data.email,
+          fullName: data.fullName,
+          password: hash,
+          roles: {
+            create: roles.map((role) => ({
+              roleId: role.id,
+            })),
+          },
+        },
+        include: { roles: true },
+      });
+
+      delete newUser.password;
+      return {
+        ok: true,
+        user: newUser,
+        message: 'Usuario creado correctamente',
+      };
+    } catch (error) {
+      this.handleErrorsException(error);
+    }
   }
 
   private handleErrorsException(error: any) {

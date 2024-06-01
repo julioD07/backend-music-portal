@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req } from '@nestjs/common';
 import { AuthService, RolesService } from './services';
 import { AuthUserDto, CreateUserDto, CreateUserWithRolesDto } from './dto';
 import { Auth } from './decorators';
 import { ValidRoles } from './interfaces';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -34,8 +35,12 @@ export class AuthController {
 
   @Auth(ValidRoles.admin)
   @Get('protected')
-  protected() {
-    return 'Protected';
+  protected(@Req() req: Request) {
+    // console.log(req.user);
+    return {
+      ok: true,
+      ...req.user,
+    }
   }
 
 }

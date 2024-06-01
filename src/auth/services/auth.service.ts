@@ -152,7 +152,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     // console.log(rolesUser);
 
     //? Generar un token JWT para el usuario
-    const token = this.jwtService.sign({
+    const token = this.generateToken({
       id: user.id,
       roles: rolesUser,
     });
@@ -262,14 +262,27 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       });
 
       delete newUser.password;
+
+      //? Generar un token JWT para el usuario
+      const token = this.generateToken({
+        id: newUser.id,
+        roles: roles.map((role) => role.name),
+      });
+
       return {
         ok: true,
         user: newUser,
         message: 'Usuario creado correctamente',
+        token,
       };
     } catch (error) {
       this.handleErrorsException(error);
     }
+  }
+
+  private generateToken(payload: any) {
+    //? Generar un token JWT para el usuario
+    return this.jwtService.sign(payload);
   }
 
   private handleErrorsException(error: any) {

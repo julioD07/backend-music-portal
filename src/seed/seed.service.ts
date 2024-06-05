@@ -15,7 +15,6 @@ export class SeedService {
 
   async ejecutarSeed() {
 
-
     //? validamos si el rol admin y user ya existen
     const [adminRole, userRole] = await Promise.all([
       this.rolesService.getRoleByName('admin'),

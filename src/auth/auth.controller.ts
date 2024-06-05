@@ -33,7 +33,7 @@ export class AuthController {
     return this.authService.login(authUserDto);
   }
 
-  @Auth(ValidRoles.admin)
+  @Auth(ValidRoles.admin, ValidRoles.user)
   @Get('protected')
   protected(@Req() req: Request) {
     // console.log(req.user);

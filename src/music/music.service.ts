@@ -17,7 +17,7 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     this.logger.log('Connected to the database');
   }
 
-  async create(createSongDto: CreateSongDto, file: Express.Multer.File) {
+  async create(createSongDto: CreateSongDto, file: Express.Multer.File, user: any) {
     // console.log(file);
     //? Validamos que el archivo venga en la petición
     if (!file) {
@@ -32,23 +32,40 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     //? Guardamos la información en la base de datos
     const song = await this.song.create({
       data: {
-        id: file.filename.split('.').pop(),
+        id: file.filename.split('.')[0],
         name: createSongDto.name,
         artist: createSongDto.artist,
         filename: file.filename,
         mimetype: file.mimetype,
         path: file.path,
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
       },
     });
 
     // delete song.mp3File;
-    return song;
+    return {
+      ok: true,
+      song,
+    };
   }
 
   async obtenerCancionPorNombre(name: string) {
     return this.song.findFirst({
       where: {
         name
+      },
+    });
+  }
+
+
+  async obtenerCancionesPorUsuario(userId: string) {
+    return this.song.findMany({
+      where: {
+        userId
       },
     });
   }

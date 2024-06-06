@@ -22,6 +22,7 @@ model User {
   roles     UserRole[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  songs     Song[]
 }
 
 model Role {
@@ -43,12 +44,13 @@ model UserRole {
 }
 
 model Song {
-  id        String      @id
+  id        String   @id @default(uuid())
   name      String
   artist    String
   filename  String
   mimetype  String
   path      String
   createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
-

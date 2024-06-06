@@ -41,3 +41,12 @@ model UserRole {
 
   @@unique([userId, roleId])
 }
+
+model Song {
+  id        String      @id @default(uuid())
+  name      String
+  artist    String
+  mp3File   Bytes
+  createdAt DateTime @default(now())
+}
+

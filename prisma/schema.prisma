@@ -43,10 +43,12 @@ model UserRole {
 }
 
 model Song {
-  id        String      @id @default(uuid())
+  id        String      @id
   name      String
   artist    String
-  mp3File   Bytes
+  filename  String
+  mimetype  String
+  path      String
   createdAt DateTime @default(now())
 }
 

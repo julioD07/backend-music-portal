@@ -25,7 +25,7 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     //? Conectarse a la base de datos
     await this.$connect();
     this.logger.log('Connected to the database');
-  }
+  } 
 
   async create(
     createSongDto: CreateSongDto,
@@ -83,11 +83,12 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  async obtenerArchivoCancion(id: string) {
+  async obtenerArchivoCancion(name: string) {
     try {
+      
       const song = await this.song.findFirst({
         where: { 
-          id, 
+          filename: name, 
         }, 
       });
  

@@ -6,7 +6,7 @@ import {
   UseInterceptors,
   Req,
   Get,
-  ParseUUIDPipe,
+  // ParseUUIDPipe,
   Res,
   Param,
 } from '@nestjs/common';
@@ -55,7 +55,7 @@ export class MusicController {
   @Get('file/:id')
   async obtenerArchivo(
     @Res() res: Response,
-    @Param('id', ParseUUIDPipe) id: string
+    @Param('id') id: string
   ) {
     const path = await this.musicService.obtenerArchivoCancion(id);
     console.log(path); 

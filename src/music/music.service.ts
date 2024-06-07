@@ -15,7 +15,7 @@ import { envs } from 'src/config';
 @Injectable()
 export class MusicService extends PrismaClient implements OnModuleInit {
   constructor() {
-    super();
+    super();  
   }
 
   private readonly logger = new Logger(MusicService.name);

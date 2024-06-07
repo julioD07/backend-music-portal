@@ -1,6 +1,16 @@
-import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { CreateSongDto } from './dto/create-song.dto';
 import { PrismaClient } from '@prisma/client';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { envs } from 'src/config';
+ 
 
 @Injectable()
 export class MusicService extends PrismaClient implements OnModuleInit {
@@ -17,7 +27,11 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     this.logger.log('Connected to the database');
   }
 
-  async create(createSongDto: CreateSongDto, file: Express.Multer.File, user: any) {
+  async create(
+    createSongDto: CreateSongDto,
+    file: Express.Multer.File,
+    user: any,
+  ) {
     // console.log(file);
     //? Validamos que el archivo venga en la petición
     if (!file) {
@@ -56,19 +70,47 @@ export class MusicService extends PrismaClient implements OnModuleInit {
   async obtenerCancionPorNombre(name: string) {
     return this.song.findFirst({
       where: {
-        name
+        name,
       },
     });
   }
-
 
   async obtenerCancionesPorUsuario(userId: string) {
     return this.song.findMany({
       where: {
-        userId
+        userId,
       },
     });
   }
 
+  async obtenerArchivoCancion(id: string) {
+    try {
+      const song = await this.song.findFirst({
+        where: { 
+          id, 
+        }, 
+      });
+ 
+      if (!song) {
+        throw new BadRequestException('No se ha encontrado la canción');
+      }
 
+      const path = join(envs.pathFiles, song.path);
+      console.log({ path });
+
+      if (!existsSync(path)) {
+        throw new BadRequestException(
+          'No se ha encontrado el archivo de la canción',
+        );
+      }
+
+      // path = path.replace('\\', '/');
+
+      return path;
+    } catch (error) {
+      // Manejo de errores aquí
+      console.error(error);
+      throw new InternalServerErrorException('An error occurred while fetching file.');
+    }
+  }
 }

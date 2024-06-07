@@ -6,7 +6,9 @@ import {
   UseInterceptors,
   Req,
   Get,
-  Query,
+  ParseUUIDPipe,
+  Res,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MusicService } from './music.service';
@@ -14,7 +16,7 @@ import { CreateSongDto } from './dto/create-song.dto';
 import { fileFilter, fileNmer } from './helpers';
 import { diskStorage } from 'multer';
 import { Auth } from 'src/auth/decorators';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 @Controller('music')
 export class MusicController {
@@ -27,22 +29,37 @@ export class MusicController {
       fileFilter: fileFilter,
       // limits: { fileSize: 1000 },
       storage: diskStorage({
-        destination: './uploads',
+        destination: './uploads/music', 
         filename: fileNmer,
-      }),
+      }), 
     }),
   )
   async create(
-    @Body() createSongDto: CreateSongDto,
+    @Body() createSongDto: CreateSongDto, 
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     // console.log(req.user);
     return this.musicService.create(createSongDto, file, req.user);
   }
 
   @Get()
-  async obtenerCancionPorNombre(@Query('userId') userId: string) {
-    return this.musicService.obtenerCancionesPorUsuario(userId);
+  @Auth()
+  async obtenerCancionPorUsuario(@Req() req: Request) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    const id: string = req.user.id as string;
+    return this.musicService.obtenerCancionesPorUsuario(id);
+  }
+
+  @Get('file/:id')
+  async obtenerArchivo(
+    @Res() res: Response,
+    @Param('id', ParseUUIDPipe) id: string
+  ) {
+    const path = await this.musicService.obtenerArchivoCancion(id);
+    console.log(path); 
+    res.sendFile(path);
   }
 }
+ 

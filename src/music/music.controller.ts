@@ -9,6 +9,7 @@ import {
   // ParseUUIDPipe,
   Res,
   Param,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MusicService } from './music.service';
@@ -17,6 +18,7 @@ import { fileFilter, fileNmer } from './helpers';
 import { diskStorage } from 'multer';
 import { Auth } from 'src/auth/decorators';
 import { Request, Response } from 'express';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('music')
 export class MusicController {
@@ -58,8 +60,23 @@ export class MusicController {
     @Param('id') id: string
   ) {
     const path = await this.musicService.obtenerArchivoCancion(id);
-    console.log(path); 
+    // console.log(path); 
     res.sendFile(path);
+  }
+
+  @Get('image/:id')
+  async obtenerImagen(
+    @Res() res: Response,
+    @Param('id') id: string
+  ) {
+    const path = await this.musicService.obtenerImagenCancion(id);
+    
+    res.sendFile(path);
+  }
+
+  @Get('songs')
+  async obtenerCanciones(@Query() pagination: PaginationDto) {
+    return this.musicService.obtenerCanciones(pagination);
   }
 }
  

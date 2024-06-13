@@ -44,6 +44,7 @@ model Song {
   filename  String
   mimetype  String
   path      String
+  pathImage String   @default("https://via.placeholder.com/150")
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id])

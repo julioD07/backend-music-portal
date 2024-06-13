@@ -3,7 +3,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { MusicController } from './music.controller';
 import { MusicService } from './music.service';
 import { AuthModule } from 'src/auth/auth.module';
-import { AuthService } from 'src/auth/services';
 
 @Module({
   imports: [
@@ -13,6 +12,6 @@ import { AuthService } from 'src/auth/services';
     AuthModule,
   ],
   controllers: [MusicController],
-  providers: [MusicService, AuthService],
+  providers: [MusicService],
 })
 export class MusicModule {}

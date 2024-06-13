@@ -1,18 +1,20 @@
-import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class RolesService extends PrismaClient implements OnModuleInit {
+  constructor() {
+    super();
+  }
 
-
-    // Método que se ejecuta cuando el módulo se inicializa
+  // Método que se ejecuta cuando el módulo se inicializa
   async onModuleInit() {
     //? Conectarse a la base de datos
     await this.$connect();
     // this.logger.log('Connected to the database');
   }
 
-    /**
+  /**
    * Método para crear un rol
    * @param name
    * @returns
@@ -86,5 +88,4 @@ export class RolesService extends PrismaClient implements OnModuleInit {
     //? Obtener los roles por sus ids
     return await this.getRolesByIds(roles);
   }
-
 }

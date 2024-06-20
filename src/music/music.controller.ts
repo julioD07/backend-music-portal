@@ -10,6 +10,7 @@ import {
   Res,
   Param,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MusicService } from './music.service';
@@ -78,5 +79,15 @@ export class MusicController {
   async obtenerCanciones(@Query() pagination: PaginationDto) {
     return this.musicService.obtenerCanciones(pagination);
   }
+
+  @Auth()
+  @Delete("song/:id")
+  async deleteSong(@Param('id') id: string, @Req() req: Request) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    const idUsuario: string = req.user.id as string;
+    return this.musicService.deleteSong(id, idUsuario)
+  }
+
 }
  

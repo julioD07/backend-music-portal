@@ -47,5 +47,6 @@ model Song {
   pathImage String   @default("https://via.placeholder.com/150")
   createdAt DateTime @default(now())
   userId    String
+  state     Boolean  @default(true)
   user      User     @relation(fields: [userId], references: [id])
 }

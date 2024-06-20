@@ -12,41 +12,31 @@ import { join } from 'path';
 import { envs } from 'src/config';
 import * as musicMetadata from 'music-metadata';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
- 
 
 @Injectable()
 export class MusicService extends PrismaClient implements OnModuleInit {
   constructor() {
-    super();  
+    super();
   }
 
   private readonly logger = new Logger(MusicService.name);
 
-  //? Método que se ejecuta cuando el módulo se inicializa
   async onModuleInit() {
-    //? Conectarse a la base de datos
     await this.$connect();
     this.logger.log('Connected to the database');
-  } 
+  }
 
   async create(
     createSongDto: CreateSongDto,
     file: Express.Multer.File,
     user: any,
   ) {
-    // console.log(file);
-    //? Validamos que el archivo venga en la petición
     if (!file) {
       throw new BadRequestException('No se ha enviado ningún archivo');
     }
 
-    //? Leemos el archivo que se subió al servidor
-    // const rutaArchivo = `./${file.path}`;
-    // const archivo = readFileSync(rutaArchivo);
-    // console.log({ archivo });
-    const objectImage = await this.extractImageFromMP3(file.path, file.filename.split('.')[0]); 
-    
-    //? Guardamos la información en la base de datos
+    const objectImage = await this.extractImageFromMP3(file.path, file.filename.split('.')[0]);
+
     const song = await this.song.create({
       data: {
         id: file.filename.split('.')[0],
@@ -64,8 +54,6 @@ export class MusicService extends PrismaClient implements OnModuleInit {
       },
     });
 
-
-    // delete song.mp3File;
     return {
       ok: true,
       song,
@@ -76,6 +64,7 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     return this.song.findFirst({
       where: {
         name,
+        state: true, // Asegurarse de que solo las canciones con estado true se devuelvan
       },
     });
   }
@@ -84,14 +73,14 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     const songs = await this.song.findMany({
       where: {
         userId,
+        state: true, // Filtrar por canciones con estado true
       },
     });
 
     const songsImages = songs.map((song) => {
       return {
         ...song,
-        //? Obtenemos la imagen de la canción
-      }
+      };
     });
 
     return songsImages;
@@ -103,8 +92,8 @@ export class MusicService extends PrismaClient implements OnModuleInit {
       const pictures = metadata.common.picture;
 
       if (pictures && pictures.length > 0) {
-        const picture = pictures[0]; // Suponemos que la primera imagen es la portada del álbum
-        const imagePath = `./uploads/imgs/${nameFileNotExtension}.jpg`; // Ruta donde se guardará la imagen
+        const picture = pictures[0];
+        const imagePath = `./uploads/imgs/${nameFileNotExtension}.jpg`;
         writeFileSync(imagePath, picture.data);
         return {
           imagePath,
@@ -116,36 +105,29 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     } catch (error) {
       throw new Error(`Error extrayendo la imagen: ${error.message}`);
     }
-
   }
 
   async obtenerArchivoCancion(name: string) {
     try {
-      
       const song = await this.song.findFirst({
-        where: { 
-          filename: name, 
-        }, 
+        where: {
+          filename: name,
+          state: true, // Filtrar por canciones con estado true
+        },
       });
- 
+
       if (!song) {
         throw new BadRequestException('No se ha encontrado la canción');
       }
 
       const path = join(envs.pathFiles, song.path);
-      // console.log({ path });
 
       if (!existsSync(path)) {
-        throw new BadRequestException(
-          'No se ha encontrado el archivo de la canción',
-        );
+        throw new BadRequestException('No se ha encontrado el archivo de la canción');
       }
-
-      // path = path.replace('\\', '/');
 
       return path;
     } catch (error) {
-      // Manejo de errores aquí
       console.error(error);
       throw new InternalServerErrorException('An error occurred while fetching file.');
     }
@@ -154,37 +136,34 @@ export class MusicService extends PrismaClient implements OnModuleInit {
   async obtenerImagenCancion(name: string) {
     try {
       const song = await this.song.findFirst({
-        where: { 
-          pathImage: name, 
-        }, 
+        where: {
+          pathImage: name,
+          state: true, // Filtrar por canciones con estado true
+        },
       });
- 
+
       if (!song) {
         throw new BadRequestException('No se ha encontrado la canción');
       }
 
-      const path = join(envs.pathFiles, "uploads", "imgs", song.pathImage);
-      console.log({ path });
+      const path = join(envs.pathFiles, 'uploads', 'imgs', song.pathImage);
 
       if (!existsSync(path)) {
-        throw new BadRequestException(
-          'No se ha encontrado el archivo de la canción',
-        );
+        throw new BadRequestException('No se ha encontrado el archivo de la canción');
       }
-
-      // path = path.replace('\\', '/');
 
       return path;
     } catch (error) {
-      // Manejo de errores aquí
       console.error(error);
       throw new InternalServerErrorException('An error occurred while fetching file.');
     }
   }
 
-  //? Obtener las ultimas 12 canciones subidas
   async obtenerCanciones(pagination: PaginationDto) {
     const songs = await this.song.findMany({
+      where: {
+        state: true, // Filtrar por canciones con estado true
+      },
       take: pagination.limit,
       skip: (pagination.page - 1) * pagination.limit,
       orderBy: {
@@ -193,5 +172,25 @@ export class MusicService extends PrismaClient implements OnModuleInit {
     });
 
     return songs;
+  }
+
+  async deleteSong(songId: string, idUsuario: string) {
+    const song = await this.song.updateMany({
+      where: { 
+        id: songId,
+        userId: idUsuario,
+        state: true // Solo permitir la eliminación si la canción está activa
+      },
+      data: { state: false },
+    });
+  
+    if (song.count === 0) {
+      throw new BadRequestException('No se ha encontrado la canción para eliminar o no está autorizada para este usuario');
+    }
+  
+    return {
+      ok: true,
+      message: 'Canción eliminada correctamente',
+    };
   }
 }
